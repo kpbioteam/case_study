@@ -1,1 +1,1 @@
-# case_study
+Increased interest in skin cancer biomarker identification led us to validate the differentially-methylated regions analysis using the Illumina 450K Methylation array data of melanoma biopsies pre and post MAPKi treatment, obtained from the Gene Expression Omnibus (GEO) (GSE65183). Methylation profiling by genome tiling array in melanoma can help us understand how non-genomic and immune changes can have an impact on treatment efficiency and disease progression.

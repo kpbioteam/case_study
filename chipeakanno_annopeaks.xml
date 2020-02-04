@@ -1,0 +1,87 @@
+<tool id="chipeakanno_annopeaks" name="ChIPpeakAnno annoPeaks" version="0.1.0">
+    <description>annotate peaks by annoGR object in the given range</description>
+    <requirements>
+        <requirement type="package" version="3.16.0-0">bioconductor-chippeakanno</requirement>
+        <requirement type="package" version="2.99.0-3">bioconductor-ensdb.hsapiens.v75</requirement>
+        <requirement type="package" version="1.42.1-1">bioconductor-rtracklayer</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        Rscript '$chipeakanno_annopeaks_script'
+    ]]></command>
+    <configfiles>
+        <configfile name="chipeakanno_annopeaks_script"><![CDATA[
+require("ChIPpeakAnno", quietly = TRUE)
+require("EnsDb.Hsapiens.v75", quietly = TRUE)
+require("rtracklayer", quietly = TRUE)
+
+options(warn = -1)
+
+data <-  read.table('$dmp')
+
+peaks <- GRanges(seqnames = data[, 1],
+                 ranges = IRanges
+                 (start = data[, 2], end = data[, 3]),score=data[, as.numeric('$score')])
+
+db <- toGRanges(EnsDb.Hsapiens.v75)
+seqlevelsStyle(peaks) <- seqlevelsStyle(db)
+
+start <- as.numeric('$start')
+end <- as.numeric('$end')
+
+anno <- annoPeaks(peaks, annoData=db, bindingType =c('$type'), bindingRegion=c(start, end))
+
+write.table(anno, file= '$tab', quote = FALSE, row.names = FALSE, sep = "\t")
+]]>
+        </configfile>
+    </configfiles> 
+    <inputs>
+        <param type="data" name="dmp" format="bed" label="Differentially Methylated Positions"/>
+        <param name="type" type="select" label="bindingType" help="Specifying the criteria to associate peaks with annotation e.g. startSite start position of the feature strand">
+                        <option value="startSite">startSite</option>
+                        <option value="endSite">endSite</option>
+                        <option value="fullRange">fullRange</option>
+                        <option value="nearestBiDirectionalPromoters">nearestBiDirectionalPromoters</option>
+                    </param>
+          <param name="start" type="text" value="-5000" label="bindingRegionStart" help="e.g. to obtain peaks within 5kb upstream and up to 3kb downstream of TSS within the gene body, set bindingType = startSite and bindingRegion = c(-5000, 3000)"/>
+            <param name="end" type="text" value="3000" label="bindingRegionEnd" help="e.g. to obtain peaks with nearest bi-directional promoters within 5kb upstream and 3kb downstream of TSS, set bindingType = nearestBiDirectionalPromoters and bindingRegion = c(-5000, 3000)"/>
+
+<param name="score" type="text" value="5" label="Additional Column of Score" help="Position of Additional Column of the Score" />
+    </inputs>
+    <outputs>
+        <data name="tab" format="tabular" label="Table of Annotated Peaks"/>
+    </outputs>
+    <tests>
+        <test>
+            <param name="dmp" value="Differentially_Methylated_Regions.bed"/>
+            <param name="type" value="startSite"/>
+            <param name="start" value="-5000"/>
+            <param name="end" value="5000"/>
+            <param name="score" value="5"/>
+            <output name="tab" file="annoTab.tabular"/>
+        </test>
+    </tests>
+    <help><![CDATA[
+This tool annotate peaks from bed file.
+bindingType
+Specifying the criteria to associate peaks with annotation. Here is how to use it together with the parameter bindingRegion
+To obtain peaks within 5kb upstream and up to 3kb downstream of TSS within the gene body, set bindingType = "startSite" and bindingRegion = c(-5000, 3000)
+To obtain peaks up to 5kb upstream within the gene body and 3kb downstream of gene/Exon End, set bindingType = "endSite" and bindingRegion = c(-5000, 3000)
+To obtain peaks from 5kb upstream to 3kb downstream of genes/Exons , set bindingType = "fullRange" and bindingRegion = c(-5000, 3000)
+To obtain peaks with nearest bi-directional promoters within 5kb upstream and 3kb downstream of TSS, set bindingType = "nearestBiDirectionalPromoters" and bindingRegion = c(-5000, 3000)
+startSite
+start position of the feature (strand is considered)
+endSite
+end position of the feature (strand is considered)
+fullRange
+whole range of the feature
+nearestBiDirectionalPromoters
+nearest promoters from both direction of the peaks (strand is considered). It will report bidirectional promoters if there are promoters in both directions in the given region (defined by bindingRegion). Otherwise, it will report the closest promoter in one direction.
+bindingRegion
+Annotation range used together with bindingType, which is a vector with two integer values, default to c (-5000, 5000). The first one must be no bigger than 0. And the sec ond one must be no less than 1. For details, see bindingType.
+ignore.peak.strand
+ignore the peaks strand or not.
+    ]]></help>
+    <citations>
+        <citation type="doi">10.18129/B9.bioc.ChIPpeakAnno</citation>
+    </citations>
+</tool>
